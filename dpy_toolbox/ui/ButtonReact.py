@@ -39,6 +39,7 @@ class ButtonReactRoler(ButtonReact):
                 await interaction.user.remove_roles(*roles)
             else:
                 await interaction.user.add_roles(*roles)
+            await interaction.response.defer()
 
         return wrapped
 

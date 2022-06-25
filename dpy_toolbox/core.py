@@ -1,8 +1,9 @@
 from typing import Optional, Callable
-from .errors import NoEventFunction
+from .errors import NoEventFunction, AsyncTryExceptException, TryExceptException
 
 DEFAULT_EVENT_TAGS = {
-            "pass_bot": False
+            "pass_bot": False,
+            "pass_self": False
         }
 
 class EventFunction:
@@ -26,3 +27,15 @@ class EventFunctionWrapper:
 
     def __call__(self, f):
         return EventFunction(f, self.wait_for_events, self.tags)
+
+async def async_try_exc(func, *args, **kwargs):
+    try:
+        return await func(*args, **kwargs)
+    except Exception as exc:
+        return AsyncTryExceptException(exc)
+
+def try_exc(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except Exception as exc:
+        return TryExceptException(exc)

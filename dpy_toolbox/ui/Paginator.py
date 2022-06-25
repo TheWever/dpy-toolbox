@@ -100,7 +100,8 @@ class Paginator(discord.ui.View):
         :return: The paginator
         :rtype: discord.ui.View
         """
-        if self.users:
+        self.users = []
+        if users:
             self.users = users if hasattr(users, '__iter__') else [users]
             self.users = list(map(lambda x: getattr(x, 'id', x), self.users))
         self.page = 0

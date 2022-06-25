@@ -4,16 +4,15 @@ import discord
 
 class _BaseDisplay:
     def __init__(self, *args, **kwargs):
-        self.attrbs = kwargs
-        for k, v in self.attrbs:
-            setattr(self, k, v)
+        self.args = args
+        self.kwargs = kwargs
 
     def has(self, name):
         return True if getattr(self, name, None) else False
 
     @property
     def _attr_to_list(self):
-        return list(self.attrbs.values())
+        return list(self.kwargs.values())
 
     @property
     def _attr_to_list_filtered(self):
@@ -21,7 +20,7 @@ class _BaseDisplay:
 
     @property
     def to_kwargs(self):
-        return dict(filter(lambda val: True if val[1] else False, self.__dict__.items()))
+        return dict(filter(lambda val: True if val[1] else False, self.kwargs.items()))
 
     @property
     def to_args(self):
@@ -47,7 +46,7 @@ class _BaseDisplay:
 
 class ButtonDisplay(_BaseDisplay):
     def __init__(self, emoji: Union[str] = None, label: Union[str] = None, color: Union[discord.ButtonStyle] = None):
-        super().__init__(super().args_to_kwargs(emoji, label, color))
+        super().__init__(emoji=emoji, label=label, color=color)
 
     @property
     def _attr_name_to_list(self):
@@ -63,8 +62,8 @@ class ButtonDisplay(_BaseDisplay):
 
 class DropdownDisplay(_BaseDisplay):
     def __init__(self, emoji: Optional[str] = None, label: Optional[str] = None, description: Optional[str] = None, color: Optional[discord.ButtonStyle] = None):
-        super().__init__(super().args_to_kwargs(emoji, label, description, color))
+        super().__init__(emoji=emoji, label=label,  description=description, color=color)
 
 class SelectOptionDisplay(_BaseDisplay):
     def __init__(self, emoji: Optional[str] = None, label: Optional[str] = None, description: Optional[str] = None):
-        super().__init__(super().args_to_kwargs(emoji, label, description))
+        super().__init__(emoji=emoji, label=label, description=description)

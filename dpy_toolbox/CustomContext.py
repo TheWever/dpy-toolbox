@@ -60,3 +60,9 @@ class CustomContext(commands.Context):
         }
         m = await self.send(**{table[type(page)]: page}, view=view)
         setattr(view, "message", m)
+
+    async def delete(self, delay: Optional[float] = None):
+        await self.message.delete(delay=delay)
+
+    async def respond(self, *args, **kwargs):
+        await self.reply(*args, **kwargs)
