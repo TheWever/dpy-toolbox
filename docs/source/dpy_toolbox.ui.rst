@@ -12,6 +12,14 @@ dpy\_toolbox.ui.ButtonReact module
    :undoc-members:
    :show-inheritance:
 
+dpy\_toolbox.ui.Modal module
+----------------------------
+
+.. automodule:: dpy_toolbox.ui.Modal
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 dpy\_toolbox.ui.Paginator module
 --------------------------------
 

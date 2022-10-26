@@ -7,6 +7,8 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   dpy_toolbox.core
+   dpy_toolbox.sink
    dpy_toolbox.ui
 
 Submodules
@@ -36,18 +38,10 @@ dpy\_toolbox.NewHelpClasses module
    :undoc-members:
    :show-inheritance:
 
-dpy\_toolbox.core module
-------------------------
+dpy\_toolbox.bot module
+-----------------------
 
-.. automodule:: dpy_toolbox.core
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-dpy\_toolbox.errors module
---------------------------
-
-.. automodule:: dpy_toolbox.errors
+.. automodule:: dpy_toolbox.bot
    :members:
    :undoc-members:
    :show-inheritance:
