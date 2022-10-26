@@ -1,9 +1,8 @@
 import asyncio
 import discord
-from typing import Optional, Union, Callable, Coroutine, Any, Tuple, Dict
+from typing import Optional, Union, Callable
 from discord.ext import commands
-from discord import app_commands, Message, Interaction
-from discord.ext.commands import Bot
+from discord import app_commands
 from discord.types.snowflake import Snowflake
 from .bot import Bot, toolbox
 from .core import MessageFilter, EventFunction, EventFunctionWrapper, BaseFilter, tokenize
@@ -13,79 +12,129 @@ DEFAULT_EVENT_ARG_FORMATTER = {
     "on_message": (InteractionMessageReference, )
 }
 
+ACTION_IDS = {
+    "delete_message": 1,
+    "react": 2,
+    "respond": 3,
+    "send": 4,
+    "send_to_channel": 5,
+    "ask_user": 6,
+    "modal_ask": 7
+}
+
+TRIGGER_IDS = {
+    "on_message": 1,
+    "on_member_join": 2,
+    "on_member_leave": 3
+}
+
+INCOMPATIBLE_TRIGGER_ACTION = {
+    1: (7, ),
+    2: (1, 2, 3, 4)
+}
+
 class SimpleTrigger:
-    def __init__(self, event, check):
+    def __init__(self, name: str, trigger_id: int, event: str, check: Callable):
+        self.name = name
+        self.trigger_id = trigger_id
         self.event = event
         self.check = check
+
+    def __str__(self):
+        return self.name
+
+    def __int__(self):
+        return self.trigger_id
 
     async def __call__(self, *args, **kwargs):
         return await self.check(*args, **kwargs)
 
     @classmethod
     def on_message(cls, filters: MessageFilter):
+        name = "on_message"
         async def callback(message: discord.Message):
             if filters(message):
                 return True
             return False
-        return cls("on_message", callback)
+        return cls(name, TRIGGER_IDS[name], "on_message", callback)
 
     @classmethod
     def on_member_join(cls, filters: BaseFilter = None):
+        name = "on_member_join"
         async def callback(member: discord.Member):
             if filters(member):
                 return True
             return False
 
-        return cls("on_member_join", callback if filters else None)
+        return cls(name, TRIGGER_IDS[name], "on_member_join", callback if filters else None)
 
     @classmethod
     def on_member_leave(cls, filters: BaseFilter = None):
+        name = "on_member_leave"
         async def callback(member: discord.Member):
             if filters(member):
                 return True
             return False
 
-        return cls("on_member_remove", callback if filters else None)
+        return cls(name, TRIGGER_IDS[name], "on_member_remove", callback if filters else None)
 
 class SimpleAction:
-    @staticmethod
-    def delete_message(delay: float = None) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, None]]:
+    def __init__(self, name: str, action_id: int, func: Callable):
+        self.name = name
+        self.action_id = action_id
+        self.func = func
+
+    def __str__(self):
+        return self.name
+
+    def __int__(self):
+        return self.action_id
+
+    async def __call__(self, *args, **kwargs):
+        return await self.func(*args, **kwargs)
+
+    @classmethod
+    def delete_message(cls, delay: float = None):
         """
         Delete the message
 
         :param float delay: The times it takes for the message to get deleted
         :return Coroutine: The action the command will execute
         """
+        name = "delete_message"
         async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]):
             await ref.message.delete(delay=delay)
-        return action
+        return cls(name, ACTION_IDS[name], action)
 
-    @staticmethod
-    def react_to_message(reaction) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, None]]:
+    @classmethod
+    def react(cls, reaction: str):
         """
-        React to
-        :param reaction:
-        :return:
+        React to a message
+
+        :param str reaction: The emoji you want the bot to react with
         """
+        name = "react"
         async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]):
             await ref.add_reaction(reaction)
-        return action
+        return cls(name, ACTION_IDS["name"], action)
 
-    @staticmethod
-    def respond(*response) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, None]]:
+    @classmethod
+    def respond(cls, *response):
+        name = "respond"
         async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]):
             await send_reply(ref, *response)
-        return action
+        return cls(name, ACTION_IDS[name], action)
 
-    @staticmethod
-    def send(*response) -> Callable[[Bot, InteractionMessageReference], Coroutine[Any, Any, None]]:
+    @classmethod
+    def send(cls, *response):
+        name = "send"
         async def action(bot: commands.Bot, ref: InteractionMessageReference):
             await ref.send(*response)
-        return action
+        return cls(name, ACTION_IDS[name], action)
 
-    @staticmethod
-    def send_to_channel(channel_id, *response
-    ) -> Callable[[Any, tuple[Any, ...], dict[str, Any]], Coroutine[Any, Any, None]]:
+    @classmethod
+    def send_to_channel(cls, channel_id, *response):
+        name = "send_to_channel"
         async def action(bot, *args, **kwargs):
             channel = bot.text_channels.get(channel_id, None)
             if not channel:
@@ -95,19 +144,18 @@ class SimpleAction:
             for arg in args:
                 kwargs[arg.__class__.__name__.lower()] = arg
             await channel.send(tokenize(" ".join(response), **kwargs))
-        return action
+        return cls(name, ACTION_IDS[name], action)
 
-    @staticmethod
-    def ask_user(
-            *, question: str,
-            timeout: float = 360.0, return_content: bool = True
-    ) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, str | None]]:
+    @classmethod
+    def ask_user(cls, *, question: str, timeout: float = 360.0, return_content: bool = True):
         """
         Ask a user and get his response
+
         :param question: The question you want to ask the user
         :param bool return_content:
         :param float timeout:
         """
+        name = "ask_user"
         async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]) -> Optional[str]:
             await send_message(ref, *question)
             try:
@@ -117,7 +165,10 @@ class SimpleAction:
             if return_content:
                 return fm.content
             return fm
-        return action
+        return cls(name, ACTION_IDS[name], action)
+
+def _is_compatable(action: SimpleAction, trigger: SimpleTrigger):
+    return True
 
 class EasyBot(Bot):
     EVENT_ARG_FORMATTER = DEFAULT_EVENT_ARG_FORMATTER
@@ -172,7 +223,7 @@ class EasyBot(Bot):
             self,
             name: str,
             trigger: Union[str, SimpleTrigger],
-            action: Callable = None,
+            action: Union[Callable, SimpleAction],
             message_filter: Optional[MessageFilter] = None,
             overwrite_existing: bool = False,
             **kwargs
@@ -190,6 +241,8 @@ class EasyBot(Bot):
             trigger = getattr(SimpleTrigger, t)(**kwargs)
         elif isinstance(trigger, str):
             trigger = SimpleTrigger.on_message(message_filter)
+        if not _is_compatable(action, trigger):
+            raise TypeError(f"{action} is not compatible with {trigger}")
         if name in self.listen_for and not overwrite_existing:
             raise TypeError(f"Name `{name}` already assigned to existing command!")
         if trigger.event not in self.listener.wait_for_events:
