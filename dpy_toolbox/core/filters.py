@@ -10,7 +10,43 @@ def ensure_set(s: Optional[Union[str, List[str], Tuple[str], Set[str]]]) -> List
 
 format_filter_arg = lambda obj, type: ensure_set(list(map(type, obj)))
 
-class MessageFilter:
+
+class BaseFilter:
+    """
+    A base for all filters
+    """
+    def __init__(self, **kwargs: Callable):
+        self.all_filters = list(kwargs)
+        self.filters = kwargs
+
+    def get_filter(self):
+        pass
+
+    def set_filter(self, **kwargs: Callable):
+        """
+        Set the filters attribute
+        :param Callable kwargs: Will replace key in filters with value
+        """
+        for k, v in kwargs:
+            self.filters[k] = v
+
+    def set_filter_arg(self, **kwargs: Any):
+        """
+        Set the filters attribute
+
+        :param Callable kwargs: Will replace key in filters with value
+        """
+        for k, v in kwargs:
+            self.all_filters[k] = v
+
+    def __iter__(self):
+        return self.filters
+
+    def __call__(self, *args):
+        return all([x(*args) for x in self.filters.values()])
+
+
+class MessageFilter(BaseFilter):
     """
     A simple filter for messages
 
@@ -139,26 +175,6 @@ class MessageFilter:
                 "account_type": (lambda m: m.author.bot if account_type == 1 else not m.author.bot) if account_type != 2 else None
             }
         return dict(filter(lambda item: item[1] is not None, filters.items()))
-
-    def set_filter(self, **kwargs: Callable):
-        """
-        Set the filters attribute
-        :param Callable kwargs: Will replace key in filters with value
-        """
-        for k, v in kwargs:
-            self.filters[k] = v
-
-    def set_filter_arg(self, **kwargs: Any):
-        """
-        Set the filters attribute
-
-        :param Callable kwargs: Will replace key in filters with value
-        """
-        for k, v in kwargs:
-            self.all_filters[k] = v
-
-    def __iter__(self):
-        return self.filters
 
     def __call__(self, msg: discord.Message):
         return all([x(msg) for x in self.filters.values()])

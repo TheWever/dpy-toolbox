@@ -1,11 +1,12 @@
 import asyncio
 import discord
-from typing import Optional, Union, Callable, Coroutine, Any
+from typing import Optional, Union, Callable, Coroutine, Any, Tuple, Dict
 from discord.ext import commands
 from discord import app_commands, Message, Interaction
+from discord.ext.commands import Bot
 from discord.types.snowflake import Snowflake
 from .bot import Bot, toolbox
-from .core import MessageFilter, EventFunction, EventFunctionWrapper
+from .core import MessageFilter, EventFunction, EventFunctionWrapper, BaseFilter, tokenize
 from .core.easybot_utils import send_message, send_reply, InteractionMessageReference
 
 DEFAULT_EVENT_ARG_FORMATTER = {
@@ -28,50 +29,86 @@ class SimpleTrigger:
             return False
         return cls("on_message", callback)
 
+    @classmethod
+    def on_member_join(cls, filters: BaseFilter = None):
+        async def callback(member: discord.Member):
+            if filters(member):
+                return True
+            return False
+
+        return cls("on_member_join", callback if filters else None)
+
+    @classmethod
+    def on_member_leave(cls, filters: BaseFilter = None):
+        async def callback(member: discord.Member):
+            if filters(member):
+                return True
+            return False
+
+        return cls("on_member_remove", callback if filters else None)
+
 class SimpleAction:
     @staticmethod
-    def delete_message(delay: float = None) -> Callable[[Message | Interaction], Coroutine[Any, Any, None]]:
+    def delete_message(delay: float = None) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, None]]:
         """
         Delete the message
 
         :param float delay: The times it takes for the message to get deleted
         :return Coroutine: The action the command will execute
         """
-        async def action(ref: Union[discord.Message, discord.Interaction]):
+        async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]):
             await ref.message.delete(delay=delay)
         return action
 
     @staticmethod
-    def react_to_message(reaction) -> Callable[[Message | Interaction], Coroutine[Any, Any, None]]:
-        async def action(ref: Union[discord.Message, discord.Interaction]):
+    def react_to_message(reaction) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, None]]:
+        """
+        React to
+        :param reaction:
+        :return:
+        """
+        async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]):
             await ref.add_reaction(reaction)
         return action
 
     @staticmethod
-    def respond(*response) -> Callable[[Message | Interaction], Coroutine[Any, Any, None]]:
-        async def action(ref: Union[discord.Message, discord.Interaction]):
+    def respond(*response) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, None]]:
+        async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]):
             await send_reply(ref, *response)
         return action
 
     @staticmethod
-    def send(*response) -> Callable[[InteractionMessageReference], Coroutine[Any, Any, None]]:
-        async def action(ref: InteractionMessageReference):
+    def send(*response) -> Callable[[Bot, InteractionMessageReference], Coroutine[Any, Any, None]]:
+        async def action(bot: commands.Bot, ref: InteractionMessageReference):
             await ref.send(*response)
         return action
 
     @staticmethod
+    def send_to_channel(channel_id, *response
+    ) -> Callable[[Any, tuple[Any, ...], dict[str, Any]], Coroutine[Any, Any, None]]:
+        async def action(bot, *args, **kwargs):
+            channel = bot.text_channels.get(channel_id, None)
+            if not channel:
+                channel = await bot.fetch_channel(channel_id)
+                bot.text_channels[channel.id] = channel
+            kwargs["bot"] = bot
+            for arg in args:
+                kwargs[arg.__class__.__name__.lower()] = arg
+            await channel.send(tokenize(" ".join(response), **kwargs))
+        return action
+
+    @staticmethod
     def ask_user(
-            bot: commands.Bot, *, question: str,
+            *, question: str,
             timeout: float = 360.0, return_content: bool = True
-    ) -> Callable[[Message | Interaction], Coroutine[Any, Any, str | None]]:
+    ) -> Callable[[Bot, Message | Interaction], Coroutine[Any, Any, str | None]]:
         """
         Ask a user and get his response
         :param question: The question you want to ask the user
-        :param commands.Bot bot: The instance of the bot
         :param bool return_content:
         :param float timeout:
         """
-        async def action(ref: Union[discord.Message, discord.Interaction]) -> Optional[str]:
+        async def action(bot: commands.Bot, ref: Union[discord.Message, discord.Interaction]) -> Optional[str]:
             await send_message(ref, *question)
             try:
                 fm = await bot.wait_for('message', timeout=timeout, check=lambda m: m.author.id == ref.author.id and m.channel.id == ref.channel.id)
@@ -96,6 +133,7 @@ class EasyBot(Bot):
         self.toolbox.events.append(self.listener)
         self.toolbox.events.append(self._AutoSync)
         self.is_synced = 0
+        self.text_channels = {}
 
     def initialize(self, register_slash=True):
         if not register_slash:
@@ -115,12 +153,14 @@ class EasyBot(Bot):
     async def _SimpleEventListener(self, bot, event, *args, **kwargs):
         for ev in self.listen_for.values():
             if ev["event"] == event:
-                if await ev["trigger"](*args, **kwargs):
-                    formatted = args
-                    formatter = DEFAULT_EVENT_ARG_FORMATTER.get(event, None)
-                    if formatter:
-                        formatted = [formatter[i](v) if formatter else v for i, v in enumerate(args)]
-                    await ev["action"](*formatted, **kwargs)
+                t = ev.get("trigger", None)
+                if t.check and not await t(*args, **kwargs):
+                    return
+                formatted = args
+                formatter = DEFAULT_EVENT_ARG_FORMATTER.get(event, None)
+                if formatter:
+                    formatted = [formatter[i](v) if formatter else v for i, v in enumerate(args)]
+                await ev["action"](bot, *formatted, **kwargs)
 
     @EventFunctionWrapper(events=["on_ready"], pass_bot=True)
     async def _AutoSync(self):

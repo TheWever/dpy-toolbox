@@ -9,7 +9,7 @@ from .core import MessageFilter
 from .CustomContext import CustomContext
 from .EmojiReact import EmojiReact as _EmojiReact
 from .EmojiReact import EmojiReactRoler as _EmojiReactRoler
-from .easybot import EasyBot, SimpleAction
+from .easybot import EasyBot, SimpleAction, SimpleTrigger
 from .bot import Bot, toolbox
 
 __all__ = (

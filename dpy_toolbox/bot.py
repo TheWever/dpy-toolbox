@@ -28,7 +28,14 @@ __all__ = (
 
 
 class toolbox:
-    DEFAULT_EVENTS = ("on_message", "on_raw_reaction_add", "on_raw_reaction_remove", "on_ready")
+    DEFAULT_EVENTS = (
+        "on_message",
+        "on_raw_reaction_add",
+        "on_raw_reaction_remove",
+        "on_ready",
+        "on_member_join",
+        "on_member_remove"
+    )
 
     def __init__(self, bot):
         self.bot: commands.Bot = bot
