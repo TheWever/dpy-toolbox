@@ -15,7 +15,7 @@ from discord.backoff import ExponentialBackoff
 from discord.gateway import *
 from discord.errors import ClientException, ConnectionClosed
 from discord.player import AudioPlayer, AudioSource
-from .sink import Sink, RawData, VirtualSink
+from .sink import Sink, RawData, VirtualSink, UnvirtualSink
 from .gateway import DiscordSinkWebSocket
 
 from discord.utils import MISSING
@@ -657,7 +657,7 @@ class SinkVoiceClient(VoiceProtocol):
             raise RecordingException("Not connected to voice channel.")
         if self.recording:
             raise RecordingException("Already recording.")
-        if not isinstance(sink, (Sink, VirtualSink)):
+        if not isinstance(sink, (Sink, VirtualSink, UnvirtualSink)):
             raise RecordingException("Must provide a Sink object.")
 
         self.empty_socket()

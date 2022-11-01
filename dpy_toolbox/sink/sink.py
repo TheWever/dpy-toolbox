@@ -297,6 +297,7 @@ class UnvirtualSink(Filters):
         self.encoding = encoding
         self.vc = None
         self.audio_data = {}
+        self.output = {}
         self.conv_file = conv_file
         self.hide_output = hide_output
 
@@ -314,12 +315,12 @@ class UnvirtualSink(Filters):
 
     def cleanup(self):
         self.finished = True
-        for v in list(self.audio_data.values()):
+        for uid, v in self.audio_data.items():
             v.seek(0, 0)
             if self.encoding != 'pcm':
                 with open(self.conv_file + '.pcm', 'wb') as f:
                     f.write(v.read())
-                self.format_audio()
+                self.output[uid] = io.BytesIO(self.format_audio())
 
     def format_audio(self, in_path=None, out_path=None):
         in_path = in_path if in_path else self.conv_file
