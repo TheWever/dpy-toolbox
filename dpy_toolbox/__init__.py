@@ -27,5 +27,9 @@ __all__ = (
     "to_SinkVoiceChannel",
     "MessageFilter",
     "helping",
+    "Paginator",
+    "SelectPage",
+    "Page",
+    "DropdownPaginator"
 )
 
