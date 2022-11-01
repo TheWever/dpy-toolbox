@@ -1,3 +1,4 @@
+import asyncio
 from typing import Union, Callable, Optional
 from discord.ext import commands
 from discord.types.snowflake import Snowflake
@@ -8,7 +9,9 @@ from .core import (
     EventFunctionWrapper,
     AnyGuildChannel,
     MessageFilter,
-    to_coroutine
+    await_any,
+    set_multikey_dict_item,
+    get_multikey_dict_item
 )
 
 from .ui import *
@@ -128,7 +131,9 @@ class Bot(commands.Bot):
         self.base_cache: dict[str, dict[int, Union[AnyGuildChannel, discord.Guild]]] = {
             "channel": {},
             "guild": {},
-            "role": {}
+            "role": {},
+            "user": {},
+            "member": {}
         }
         self.toolbox: Optional[Toolbox] = None
         self.is_synced = False
@@ -141,27 +146,44 @@ class Bot(commands.Bot):
         if self.auto_sync:
             self.add_listener(self._autosync, "on_ready")
 
-    def get_any_from_cache(
+    async def get_any_from_cache(
             self,
             base_key: str,
             method: Callable,
             key: int,
-            overwrite: bool = False
-    ) -> Union[discord.Guild, AnyGuildChannel]:
+            overwrite: bool = False,
+            *args
+    ) -> Union[discord.User, discord.Role, discord.Guild, AnyGuildChannel]:
         if not isinstance(key, int):
             raise ValueError(f'Expected {int}, got {type(key)}')
         if key not in self.base_cache[base_key] or overwrite:
-            self.base_cache[base_key][key] = method(key)
-        return self.base_cache[base_key][key]
+            set_multikey_dict_item(self.base_cache, await await_any(method, key), base_key, *args, key)
+        return get_multikey_dict_item(self.base_cache, base_key, *args, key)
 
-    def get_channel_from_cache(self, channel_id: Union[str, int], overwrite: bool = False) -> AnyGuildChannel:
-        return self.get_any_from_cache('channel', self.get_channel, int(channel_id), overwrite=overwrite)
+    async def fetch_user_from_cache(self, user_id: Union[str, int], overwrite: bool = False) -> discord.User:
+        return await self.get_any_from_cache('user', self.fetch_user, int(user_id), overwrite=overwrite)
 
-    def get_guild_from_cache(self, guild_id: Union[str, int], overwrite: bool = False) -> discord.Guild:
-        return self.get_any_from_cache('guild', self.get_guild, int(guild_id), overwrite=overwrite)
+    async def get_channel_from_cache(self, channel_id: Union[str, int], overwrite: bool = False) -> AnyGuildChannel:
+        return await self.get_any_from_cache('channel', self.get_channel, int(channel_id), overwrite=overwrite)
 
-    def get_role_from_cache(self, role_id: Union[str, int], overwrite: bool = False) -> discord.Guild:
-        return self.get_any_from_cache('role', self.get_guild, int(role_id), overwrite=overwrite)
+    async def get_guild_from_cache(self, guild_id: Union[str, int], overwrite: bool = False) -> discord.Guild:
+        return await self.get_any_from_cache('guild', self.get_guild, int(guild_id), overwrite=overwrite)
+
+    async def get_role_from_cache(self, guild_id: Union[str, int, discord.Guild], role_id: Union[str, int], overwrite: bool = False) -> discord.Role:
+        guild: discord.Guild = guild_id
+        if isinstance(guild_id, discord.Guild):
+            self.base_cache['guild'][guild.id] = guild
+        else:
+            guild = await self.get_guild_from_cache(int(guild_id), overwrite=overwrite)
+        return await self.get_any_from_cache('role', guild.get_role, int(role_id), overwrite, guild.id)
+
+    async def get_member_from_cache(self, guild_id: Union[str, int, discord.Guild], user_id: Union[str, int], overwrite: bool = False) -> discord.Role:
+        guild: discord.Guild = guild_id
+        if isinstance(guild_id, discord.Guild):
+            self.base_cache['guild'][guild.id] = guild
+        else:
+            guild = await self.get_guild_from_cache(int(guild_id), overwrite=overwrite)
+        return await self.get_any_from_cache('member', guild.get_member, int(user_id), overwrite, guild.id)
 
     async def _autosync(self):
         await self.sync(self.auto_sync if isinstance(self.auto_sync, int) else None)
