@@ -1,5 +1,7 @@
 from dpy_toolbox.core.errors import AsyncTryExceptException, TryExceptException
-from typing import Callable, Coroutine
+from typing import Callable, Coroutine, Any, Union
+from functools import wraps
+import asyncio
 import string
 
 
@@ -39,7 +41,28 @@ class Tokenizer(dict):
 def tokenize(s: str, *args, **kwargs):
     return string.Formatter().vformat(s, args, Tokenizer(**kwargs))
 
-def to_coroutine(func: Callable):
-    async def call(*args, **kwargs):
-        return await func(*args, **kwargs)
-    return call
+
+def ensure_coroutine(
+        func: Callable
+) -> Union[Callable[[tuple[Any, ...], dict[str, Any]], Coroutine[Any, Any, Any]], Callable[..., Any]]:
+    """Returns awaitable func"""
+    @wraps(func)
+    async def awaitable(*args, **kwargs) -> Any:
+        return func(*args, **kwargs)
+    return awaitable if not asyncio.iscoroutinefunction(func) else func
+
+async def await_any(func, *args, **kwargs):
+    return await ensure_coroutine(func)(*args, **kwargs)
+
+def set_multikey_dict_item(obj: dict, val, *args):
+    if len(args) <= 1:
+        obj.__setitem__(args[0], val)
+        return obj
+    if args[0] not in obj:
+        obj[args[0]] = {}
+    return set_multikey_dict_item(obj[args[0]], val, *args[1:])
+
+def get_multikey_dict_item(obj: dict, *args):
+    if len(args) <= 1:
+        return obj.__getitem__(args[0])
+    return get_multikey_dict_item(obj[args[0]], *args[1:])
