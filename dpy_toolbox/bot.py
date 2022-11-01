@@ -125,11 +125,15 @@ class Toolbox:
 
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
-        self.channel_cache: dict[str, AnyGuildChannel] = {}
-        self.guild_cache: dict[str, discord.Guild] = {}
+        self.base_cache: dict[str, dict[int, Union[AnyGuildChannel, discord.Guild]]] = {
+            "channel": {},
+            "guild": {},
+            "role": {}
+        }
         self.toolbox: Optional[Toolbox] = None
         self.is_synced = False
         self.auto_sync: bool = kwargs.pop('auto_sync', False)
+
         tb: Union[bool, int] = kwargs.pop('toolbox', False)
         super().__init__(*args, **kwargs)
         if tb:
@@ -137,25 +141,27 @@ class Bot(commands.Bot):
         if self.auto_sync:
             self.add_listener(self._autosync, "on_ready")
 
-    async def get_channel_from_cache(
+    def get_any_from_cache(
             self,
-            channel_id: Union[str, int],
+            base_key: str,
+            method: Callable,
+            key: int,
             overwrite: bool = False
-    ) -> AnyGuildChannel:
-        channel_id = str(channel_id)
-        if channel_id not in self.channel_cache or overwrite:
-            self.channel_cache[channel_id] = self.get_channel(int(channel_id))
-        return self.channel_cache[channel_id]
+    ) -> Union[discord.Guild, AnyGuildChannel]:
+        if not isinstance(key, int):
+            raise ValueError(f'Expected {int}, got {type(key)}')
+        if key not in self.base_cache[base_key] or overwrite:
+            self.base_cache[base_key][key] = method(key)
+        return self.base_cache[base_key][key]
 
-    async def get_guild_from_cache(
-            self,
-            guild_id: Union[str, int],
-            overwrite: bool = False
-    ) -> discord.Guild:
-        guild_id = int(guild_id)
-        if guild_id not in self.guild_cache or overwrite:
-            self.guild_cache[guild_id] = self.get_guild(int(guild_id))
-        return self.guild_cache[guild_id]
+    def get_channel_from_cache(self, channel_id: Union[str, int], overwrite: bool = False) -> AnyGuildChannel:
+        return self.get_any_from_cache('channel', self.get_channel, int(channel_id), overwrite=overwrite)
+
+    def get_guild_from_cache(self, guild_id: Union[str, int], overwrite: bool = False) -> discord.Guild:
+        return self.get_any_from_cache('guild', self.get_guild, int(guild_id), overwrite=overwrite)
+
+    def get_role_from_cache(self, role_id: Union[str, int], overwrite: bool = False) -> discord.Guild:
+        return self.get_any_from_cache('role', self.get_guild, int(role_id), overwrite=overwrite)
 
     async def _autosync(self):
         await self.sync(self.auto_sync if isinstance(self.auto_sync, int) else None)
