@@ -10,7 +10,7 @@ async def hello(ctx: commands.Context):
     # dont log like this use on_message
     # this will not send a new request if the channel has been fetched previously
     # => prevents rate limits due to fetching
-    log_channel = await bot.get_channel_from_cache("880934899622740072")
+    log_channel = bot.get_channel_from_cache("880934899622740072")
     await log_channel.send(f"{ctx.author} ({ctx.author.id}) used hello in {ctx.channel.mention}")
 
 @bot.event
