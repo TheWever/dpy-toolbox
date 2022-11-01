@@ -2,8 +2,8 @@ from dpy_toolbox import Bot
 import discord
 import asyncio
 
-bot = Bot(command_prefix='!', intents=discord.Intents.all())
-TOKEN = ''  # BAD
+bot = Bot(command_prefix='!', intents=discord.Intents.all(), toolbox=True)
+TOKEN = 'ODgwOTQwODYzNTM3MTU2MTA3.GNQv8n.VzGsJ7hdBAdRF7YSPMETTKf5-SV1NDdd2_JoHM'  # BAD
 
 @bot.event
 async def on_ready():
@@ -11,7 +11,7 @@ async def on_ready():
 
 # callback get called on add/remove of emoji
 async def emoji_callback(payload: discord.RawReactionActionEvent):
-    channel: discord.TextChannel = await bot.fetch_channel(payload.channel_id)
+    channel: discord.TextChannel = bot.get_channel_from_cache(payload.channel_id)
     message: discord.Message = await channel.fetch_message(payload.message_id)
     user: discord.User = await bot.fetch_user(payload.user_id)
     await message.reply(f'{user.mention} you {"reacted with" if payload.event_type == "REACTION_ADD" else "removed your reaction"} {payload.emoji.name}')
@@ -22,7 +22,7 @@ async def emoji_react(ctx, *, message=None):
         return
     msg = await ctx.send(message)
     # new emoji react
-    s = bot.utils.EmojiReact()
+    s = bot.toolbox.EmojiReact()
     # add emojis and their callback func
     await s.add("✅", emoji_callback)
     await s.add("❌", emoji_callback)
@@ -32,4 +32,5 @@ async def emoji_react(ctx, *, message=None):
     await asyncio.sleep(10)
     await s.abort()
 
-bot.run(TOKEN)
+if __name__ == '__main__':
+    bot.run(TOKEN)
