@@ -1,7 +1,7 @@
 import discord
-from typing import Optional, Union, List, Set, Tuple, Callable, Any
+from typing import Optional, Union, List, Set, Tuple, Callable, Any, Iterable
 
-def ensure_set(s: Optional[Union[str, List[str], Tuple[str], Set[str]]]) -> List[str]:
+def ensure_set(s: Optional[Union[str, Iterable[str, ...], Tuple[str], Set[str]]]) -> Iterable[str, ...]:
     """
     :meta private:
     """
@@ -50,23 +50,23 @@ class MessageFilter(BaseFilter):
     """
     A simple filter for messages
 
-    :param list[int] authors: The message must be send by any of these users
-    :param list[int] guild_ids: The message but be located in any of these guilds
-    :param list[int] channel_ids: The message but be located in any of these channels
-    :param list[int] mentions_all: The message must mention all of these users
-    :param list[int] mentions_any: The message must mention any of these users
-    :param list[str] match_content: The exact content the message must include
-    :param list[str] in_content: The content that must be found in the message
-    :param list[str] startswith_content: The content the message must start with
-    :param list[str] endswith_content: The content the message must end with
-    :param list[int] not_authors: Users that must not have written this message
-    :param list[int] not_guild_ids: The guilds that will be filtered
-    :param list[int] not_channel_ids: The channels that will be filtered
-    :param list[int] not_mentions: The users the message must not mention
-    :param list[str] not_match_content: The content the message must not include
-    :param list[str] not_in_content: The content that must not be found  in the message
-    :param list[str] not_startswith_content: The content the message must not start with
-    :param list[str] not_endswith_content: The content the message must not end with
+    :param Iterable[int, ...] authors: The message must be send by any of these users
+    :param Iterable[int, ...] guild_ids: The message but be located in any of these guilds
+    :param Iterable[int, ...] channel_ids: The message but be located in any of these channels
+    :param Iterable[int, ...] mentions_all: The message must mention all of these users
+    :param Iterable[int, ...] mentions_any: The message must mention any of these users
+    :param Iterable[str, ...] match_content: The exact content the message must include
+    :param Iterable[str, ...] in_content: The content that must be found in the message
+    :param Iterable[str, ...] startswith_content: The content the message must start with
+    :param Iterable[str, ...] endswith_content: The content the message must end with
+    :param Iterable[int, ...] not_authors: Users that must not have written this message
+    :param Iterable[int, ...] not_guild_ids: The guilds that will be filtered
+    :param Iterable[int, ...] not_channel_ids: The channels that will be filtered
+    :param Iterable[int, ...] not_mentions: The users the message must not mention
+    :param Iterable[str, ...] not_match_content: The content the message must not include
+    :param Iterable[str, ...] not_in_content: The content that must not be found  in the message
+    :param Iterable[str, ...] not_startswith_content: The content the message must not start with
+    :param Iterable[str, ...] not_endswith_content: The content the message must not end with
     :param int account_type:
         The type of account the author has:
         0 Bots are excluded / users only
@@ -77,23 +77,23 @@ class MessageFilter(BaseFilter):
     """
     def __init__(
             self,
-            authors: Union[int, list[int]] = None,
-            guild_ids: Union[int, list[int]] = None,
-            channel_ids: Union[int, list[int]] = None,
-            mentions_all: Union[int, list[int]] = None,
-            mentions_any: Union[int, list[int]] = None,
-            match_content: Union[str, list[str]] = None,
-            in_content: Union[str, list[str]] = None,
-            startswith_content: Union[str, list[str]] = None,
-            endswith_content: Union[str, list[str]] = None,
-            not_authors: Union[int, list[int]] = None,
-            not_guild_ids: Union[int, list[int]] = None,
-            not_channel_ids: Union[int, list[int]] = None,
-            not_mentions: Union[str, list[str]] = None,
-            not_match_content: Union[str, list[str]] = None,
-            not_in_content: Union[str, list[str]] = None,
-            not_startswith_content: Union[str, list[str]] = None,
-            not_endswith_content: Union[str, list[str]] = None,
+            authors: Union[int, Iterable[int, ...]] = None,
+            guild_ids: Union[int, Iterable[int, ...]] = None,
+            channel_ids: Union[int, Iterable[int, ...]] = None,
+            mentions_all: Union[int, Iterable[int, ...]] = None,
+            mentions_any: Union[int, Iterable[int, ...]] = None,
+            match_content: Union[str, Iterable[str, ...]] = None,
+            in_content: Union[str, Iterable[str, ...]] = None,
+            startswith_content: Union[str, Iterable[str, ...]] = None,
+            endswith_content: Union[str, Iterable[str, ...]] = None,
+            not_authors: Union[int, Iterable[int, ...]] = None,
+            not_guild_ids: Union[int, Iterable[int, ...]] = None,
+            not_channel_ids: Union[int, Iterable[int, ...]] = None,
+            not_mentions: Union[str, Iterable[str, ...]] = None,
+            not_match_content: Union[str, Iterable[str, ...]] = None,
+            not_in_content: Union[str, Iterable[str, ...]] = None,
+            not_startswith_content: Union[str, Iterable[str, ...]] = None,
+            not_endswith_content: Union[str, Iterable[str, ...]] = None,
             account_type: int = 2,
     ):
         self.all_filters = {
@@ -109,45 +109,45 @@ class MessageFilter(BaseFilter):
 
     def get_filter(
             self,
-            authors: Union[int, list[int]] = None,
-            guild_ids: Union[int, list[int]] = None,
-            channel_ids: Union[int, list[int]] = None,
-            mentions_all: Union[int, list[int]] = None,
-            mentions_any: Union[int, list[int]] = None,
-            match_content: Union[int, list[int]] = None,
-            in_content: Union[str, list[str]] = None,
-            startswith_content: Union[str, list[str]] = None,
-            endswith_content: Union[str, list[str]] = None,
-            not_authors: Union[int, list[int]] = None,
-            not_guild_ids: Union[int, list[int]] = None,
-            not_channel_ids: Union[int, list[int]] = None,
-            not_mentions: Union[str, list[str]] = None,
-            not_match_content: Union[str, list[str]] = None,
-            not_in_content: Union[str, list[str]] = None,
-            not_startswith_content: Union[str, list[str]] = None,
-            not_endswith_content: Union[str, list[str]] = None,
+            authors: Union[int, Iterable[int, ...]] = None,
+            guild_ids: Union[int, Iterable[int, ...]] = None,
+            channel_ids: Union[int, Iterable[int, ...]] = None,
+            mentions_all: Union[int, Iterable[int, ...]] = None,
+            mentions_any: Union[int, Iterable[int, ...]] = None,
+            match_content: Union[int, Iterable[int, ...]] = None,
+            in_content: Union[str, Iterable[str, ...]] = None,
+            startswith_content: Union[str, Iterable[str, ...]] = None,
+            endswith_content: Union[str, Iterable[str, ...]] = None,
+            not_authors: Union[int, Iterable[int, ...]] = None,
+            not_guild_ids: Union[int, Iterable[int, ...]] = None,
+            not_channel_ids: Union[int, Iterable[int, ...]] = None,
+            not_mentions: Union[str, Iterable[str, ...]] = None,
+            not_match_content: Union[str, Iterable[str, ...]] = None,
+            not_in_content: Union[str, Iterable[str, ...]] = None,
+            not_startswith_content: Union[str, Iterable[str, ...]] = None,
+            not_endswith_content: Union[str, Iterable[str, ...]] = None,
             account_type: int = 2,
     ):
         """
         A simple filter for messages
 
-        :param list[int] authors: The message must be send by any of these users
-        :param list[int] guild_ids: The message but be located in any of these guilds
-        :param list[int] channel_ids: The message but be located in any of these channels
-        :param list[int] mentions_all: The message must mention all of these users
-        :param list[int] mentions_any: The message must mention any of these users
-        :param list[str] match_content: The exact content the message must include
-        :param list[str] in_content: The content that must be found in the message
-        :param list[str] startswith_content: The content the message must start with
-        :param list[str] endswith_content: The content the message must end with
-        :param list[int] not_authors: Users that must not have written this message
-        :param list[int] not_guild_ids: The guilds that will be filtered
-        :param list[int] not_channel_ids: The channels that will be filtered
-        :param list[int] not_mentions: The users the message must not mention
-        :param list[str] not_match_content: The content the message must not include
-        :param list[str] not_in_content: The content that must not be found  in the message
-        :param list[str] not_startswith_content: The content the message must not start with
-        :param list[str] not_endswith_content: The content the message must not end with
+        :param Iterable[int, ...] authors: The message must be send by any of these users
+        :param Iterable[int, ...] guild_ids: The message but be located in any of these guilds
+        :param Iterable[int, ...] channel_ids: The message but be located in any of these channels
+        :param Iterable[int, ...] mentions_all: The message must mention all of these users
+        :param Iterable[int, ...] mentions_any: The message must mention any of these users
+        :param Iterable[str, ...] match_content: The exact content the message must include
+        :param Iterable[str, ...] in_content: The content that must be found in the message
+        :param Iterable[str, ...] startswith_content: The content the message must start with
+        :param Iterable[str, ...] endswith_content: The content the message must end with
+        :param Iterable[int, ...] not_authors: Users that must not have written this message
+        :param Iterable[int, ...] not_guild_ids: The guilds that will be filtered
+        :param Iterable[int, ...] not_channel_ids: The channels that will be filtered
+        :param Iterable[int, ...] not_mentions: The users the message must not mention
+        :param Iterable[str, ...] not_match_content: The content the message must not include
+        :param Iterable[str, ...] not_in_content: The content that must not be found  in the message
+        :param Iterable[str, ...] not_startswith_content: The content the message must not start with
+        :param Iterable[str, ...] not_endswith_content: The content the message must not end with
         :param int account_type:
             The type of account the author has:
             0 Bots are excluded / users only
