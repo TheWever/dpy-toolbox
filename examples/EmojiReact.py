@@ -3,7 +3,7 @@ import discord
 import asyncio
 
 bot = Bot(command_prefix='!', intents=discord.Intents.all(), toolbox=True)
-TOKEN = 'ODgwOTQwODYzNTM3MTU2MTA3.GNQv8n.VzGsJ7hdBAdRF7YSPMETTKf5-SV1NDdd2_JoHM'  # BAD
+TOKEN = ''  # BAD
 
 @bot.event
 async def on_ready():
