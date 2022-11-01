@@ -1,4 +1,3 @@
-from dpy_toolbox.Paginator import Paginator, Book
 from dpy_toolbox import Bot
 import discord
 
@@ -14,4 +13,5 @@ async def ask_age(ctx):
 async def on_ready():
     print(f'Running as {bot.user}')
 
-bot.run(TOKEN)
+if __name__ == '__main__':
+    bot.run(TOKEN)
