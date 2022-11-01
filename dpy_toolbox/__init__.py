@@ -1,4 +1,4 @@
-from .sink import to_SinkVoiceClient, MP3Sink, Sink, VirtualSink, DiscordSinkWebSocket, SinkVoiceClient, SinkVoiceChannel, to_SinkVoiceChannel
+from .sink import to_SinkVoiceClient, MP3Sink, Sink, UnvirtualSink, VirtualSink, DiscordSinkWebSocket, SinkVoiceClient, SinkVoiceChannel, to_SinkVoiceChannel
 
 from .core.errors import (
     NotAllowed
@@ -21,6 +21,8 @@ __all__ = (
     "to_SinkVoiceClient",
     "SinkVoiceClient",
     "MP3Sink",
+    "VirtualSink",
+    "UnvirtualSink",
     "SinkVoiceChannel",
     "to_SinkVoiceChannel",
     "MessageFilter",
