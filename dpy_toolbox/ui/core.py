@@ -3,15 +3,20 @@ from typing import Union, Optional
 import discord
 
 class _BaseDisplay:
-    def __init__(self, *args, **kwargs):
-        self.args = args
+    def __init__(self, **kwargs):
         self.kwargs = kwargs
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     def has(self, name):
         return True if getattr(self, name, None) else False
 
     @property
-    def _attr_to_list(self):
+    def keys(self) -> tuple:
+        return tuple(self.kwargs.keys())
+
+    @property
+    def _attr_to_list(self) -> list:
         return list(self.kwargs.values())
 
     @property
@@ -20,7 +25,7 @@ class _BaseDisplay:
 
     @property
     def to_kwargs(self):
-        return dict(filter(lambda val: True if val[1] else False, self.kwargs.items()))
+        return dict(filter(lambda val: bool(val[1]), self.kwargs.items()))
 
     @property
     def to_args(self):
@@ -36,6 +41,12 @@ class _BaseDisplay:
                 r.append(args[i])
         return r
 
+    def set_kwargs(self, **kwargs):
+        for k, v in kwargs.items():
+            self.kwargs[k] = v
+            setattr(self, k, v)
+        return kwargs
+
     @classmethod
     def from_args(cls, *args):
         return cls.__new__(cls).__init__(**cls.args_to_kwargs(*args))
@@ -45,8 +56,8 @@ class _BaseDisplay:
         return {arg: arg for arg in args}
 
 class ButtonDisplay(_BaseDisplay):
-    def __init__(self, emoji: Union[str] = None, label: Union[str] = None, color: Union[discord.ButtonStyle] = None):
-        super().__init__(emoji=emoji, label=label, color=color)
+    def __init__(self, label: Union[str] = None, emoji: Union[str] = None, color: Union[discord.ButtonStyle] = None):
+        super().__init__(label=label, emoji=emoji, color=color)
 
     @property
     def _attr_name_to_list(self):
