@@ -8,11 +8,20 @@ Subpackages
    :maxdepth: 4
 
    dpy_toolbox.core
+   dpy_toolbox.helping
    dpy_toolbox.sink
    dpy_toolbox.ui
 
 Submodules
 ----------
+
+dpy\_toolbox.AutoHelp module
+----------------------------
+
+.. automodule:: dpy_toolbox.AutoHelp
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 dpy\_toolbox.CustomContext module
 ---------------------------------
@@ -26,14 +35,6 @@ dpy\_toolbox.EmojiReact module
 ------------------------------
 
 .. automodule:: dpy_toolbox.EmojiReact
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-dpy\_toolbox.NewHelpClasses module
-----------------------------------
-
-.. automodule:: dpy_toolbox.NewHelpClasses
    :members:
    :undoc-members:
    :show-inheritance:

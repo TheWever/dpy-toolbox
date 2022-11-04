@@ -12,6 +12,14 @@ dpy\_toolbox.core.default module
    :undoc-members:
    :show-inheritance:
 
+dpy\_toolbox.core.dpy\_typing module
+------------------------------------
+
+.. automodule:: dpy_toolbox.core.dpy_typing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 dpy\_toolbox.core.errors module
 -------------------------------
 
@@ -24,6 +32,22 @@ dpy\_toolbox.core.events module
 -------------------------------
 
 .. automodule:: dpy_toolbox.core.events
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dpy\_toolbox.core.filters module
+--------------------------------
+
+.. automodule:: dpy_toolbox.core.filters
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+dpy\_toolbox.core.translator module
+-----------------------------------
+
+.. automodule:: dpy_toolbox.core.translator
    :members:
    :undoc-members:
    :show-inheritance:
