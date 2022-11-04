@@ -1,4 +1,4 @@
-from dpy_toolbox import Paginator, Book
+from dpy_toolbox.ui.Paginator import Paginator, Book
 from dpy_toolbox import Bot
 import discord
 
@@ -9,12 +9,11 @@ TOKEN = ''  # BAD
 async def goread(ctx):
     myBook = Book.from_iter(["Hello", "Yellow", "Fellow"])
     print(myBook)
-    myView = Paginator(myBook)
+    myView = Paginator(myBook, show_page=True)
     await ctx.send_paginator(myView)
 
 @bot.event
 async def on_ready():
     print(f'Running as {bot.user}')
 
-if __name__ == '__main__':
-    bot.run(TOKEN)
+bot.run(TOKEN)
