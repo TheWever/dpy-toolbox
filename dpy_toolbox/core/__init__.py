@@ -1,5 +1,6 @@
 from .dpy_typing import *
 from .filters import MessageFilter, BaseFilter
+from .translator import *
 from .events import EventFunction, EventFunctionWrapper
 from .default import (
     async_try_exc,
