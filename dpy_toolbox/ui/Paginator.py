@@ -1,7 +1,9 @@
-from typing import Union, Iterable, Optional
+from typing import Union, Iterable, Optional, Callable, Coroutine
 import discord
 from itertools import chain
 from ..ui.core import ButtonDisplay, DropdownDisplay, SelectOptionDisplay
+
+ButtonCallback = Callable[[discord.Interaction, discord.ui.Button], Coroutine]  # inter button page
 
 class Page:
     def __init__(self, content: Union[str, discord.Embed]):
@@ -76,6 +78,7 @@ class NavigationOptions:
     """
     FIRST = ButtonDisplay("⏪")
     LEFT = ButtonDisplay("◀️")
+    MIDDLE = ButtonDisplay("⏹️")
     RIGHT = ButtonDisplay("▶️")
     LAST = ButtonDisplay("⏩")
     DISABLE = ButtonDisplay("🗑️")
@@ -86,39 +89,81 @@ class NavigationOptions:
 
 
 class Paginator(discord.ui.View):
-    def __init__(self, book: Union[Book], users: Union[discord.User, int, list[discord.User], list[int]] = None,
-                 options: Optional[NavigationOptions] = None,
-                 timeout: Union[int] = 120):
+    def __init__(
+            self,
+            book: Union[Book],
+            users: Union[discord.User, int, list[discord.User], list[int]] = None,
+            options: Optional[NavigationOptions] = None,
+            able_to_turn_style: discord.ButtonStyle = None,
+            unable_to_turn: ButtonDisplay = None,
+            disable_unable: bool = True,
+            first_callback: ButtonCallback = None,
+            right_callback: ButtonCallback = None,
+            left_callback: ButtonCallback = None,
+            last_callback: ButtonCallback = None,
+            show_page: bool = False,
+            timeout: Union[float] = 120):
         """
         Custom Paginator
+
         :param Book book: A book that will be used as an iterator
         :param list[discord.Member] users: A list of all users that are allowed to use this paginator
         :param list[int] users: A list of all user ids that are allowed to use this paginator
         :param None users: Everyone is allowed to use this paginator
         :param NavigationOptions options: The options that will be used to create each button
-        :param int timeout: The view's timeout
+        :param float timeout: The view's timeout
+        :param discord.ButtonStyle able_to_turn_style:
+        :param ButtonDisplay unable_to_turn:
+        :param bool disable_unable:  If a button that the user is not able to interact with should be disabled
+        :param ButtonCallback first_callback: The callback of the first button which will return to the first page
+        :param ButtonCallback right_callback: The callback of the second button which will return to the first page
+        :param ButtonCallback left_callback: The callback of the third (or fourth if Middle button) button which will move to the next page
+        :param ButtonCallback last_callback: The callback of the fourth (or fifth if Middle button) button which will return to the last page
         :return: The paginator
         :rtype: discord.ui.View
         """
+        self.book = book
+        self.page = 0
+        self.message = None
+        self.show_page = show_page
+        self.disable_unable = disable_unable
+
         self.users = []
         if users:
             self.users = users if hasattr(users, '__iter__') else [users]
             self.users = list(map(lambda x: getattr(x, 'id', x), self.users))
-        self.page = 0
+
         self.options = options if options else NavigationOptions()
-        self.message = None
-        self.book = book
+
+        self.able_to_turn_style = able_to_turn_style or discord.ButtonStyle.green
+        self.unable_to_turn = unable_to_turn or ButtonDisplay(label='...', color=discord.ButtonStyle.red)
+
+        self.left_callback = left_callback or self.default_callback_wrapper(lambda: self.page - 1)
+        self.right_callback = right_callback or self.default_callback_wrapper(lambda: self.page + 1)
+
+        self.first_callback = first_callback or self.default_callback_wrapper(lambda: 0)
+        self.last_callback = last_callback or self.default_callback_wrapper(lambda: self.book.page_count - 1)
 
         super().__init__(timeout=timeout)
+
+        self._middle.disabled = True
+        if self.show_page:
+            self.options.LEFT = self.unable_to_turn
+            self.options.MIDDLE.set_kwargs(label="1")
+            self.options.RIGHT.set_kwargs(label="2")
+
         table = {
             "First": self.options.FIRST,
             "Left": self.options.LEFT,
+            "Middle": self.options.MIDDLE,
             "Right": self.options.RIGHT,
             "Last": self.options.LAST,
             "Delete": self.options.DISABLE,
         }
         for child in self.children:
             child.label, child.emoji, child.style = table[child.label].set_args(child.label, child.emoji, child.style)
+
+        self._update_buttons(self.page)
 
     async def _is_owner(self, inter):
         if self.users:
@@ -127,74 +172,101 @@ class Paginator(discord.ui.View):
                 return False
         return True
 
+    def _update_buttons(self, final_page):
+        bias_page = final_page + 1
+
+        self._left.style, self._middle.style, self._right.style = 3 * [self.able_to_turn_style]
+
+        self._left.label = str(bias_page - 1)
+        self._middle.label = str(bias_page)
+        self._right.label = str(bias_page + 1)
+
+        stylish_checks = (
+            (self._right, final_page == self.book.page_count - 1),
+            (self._left, final_page < 1)
+        )
+
+        for btn, check in stylish_checks:
+            if check:
+                btn.label, btn.emoji, btn.style = self.unable_to_turn.to_args
+            btn.disabled = True if self.disable_unable and check else False
+
     async def _turn_page(self, turn: Union[int]):
-        if -1 < self.page + turn < self.book.page_count:
-            self.page += turn
+        if -1 < turn < self.book.page_count:
+            self.page = turn
             return True
         return False
 
+    def default_callback_wrapper(self, turn: Callable):
+        async def default_callback(inter: discord.Interaction, button: discord.ui.Button):
+            if not (await self._is_owner(inter)):
+                return await inter.response.defer()
+
+            final_page = turn()
+            if self.page == final_page:
+                return await inter.response.defer()
+
+            turned_page = await self._turn_page(final_page)
+
+            if self.show_page:
+                self._update_buttons(final_page)
+
+            if turned_page:
+                await self._update_book(inter)
+            else:
+                await inter.response.defer()
+
+        return default_callback
+
     async def _update_book(self, interaction=None):
+        await self.on_update(interaction, self.page)
         page = self.book.pages[self.page].content
         table = {
             discord.Embed: "embed",
             str: "content"
         }
         if interaction:
-            await interaction.response.edit_message(**{table[type(page)]: page})
+            await interaction.response.edit_message(**{table[type(page)]: page}, view=self)
         elif self.message:
-            await self.message.edit(**{table[type(page)]: page})
+            await self.message.edit(**{table[type(page)]: page}, view=self)
 
     @discord.ui.button(label="First", style=discord.ButtonStyle.blurple)
     async def _first(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not (await self._is_owner(interaction)): return
-        if self.page > 0:
-            self.page = 0
-            await self._update_book(interaction)
-        else:
-            await interaction.response.defer()
+        await self.first_callback(interaction, button)
 
     @discord.ui.button(label="Left", style=discord.ButtonStyle.blurple)
     async def _left(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not (await self._is_owner(interaction)): return
-        paged = await self._turn_page(-1)
-        if paged:
-            await self._update_book(interaction)
-        else:
-            await interaction.response.defer()
+        await self.left_callback(interaction, button)
+
+    @discord.ui.button(label="Middle", style=discord.ButtonStyle.blurple)
+    async def _middle(self, interaction: discord.Interaction, button: discord.ui.Button):
+        pass
 
     @discord.ui.button(label="Right", style=discord.ButtonStyle.blurple)
     async def _right(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not (await self._is_owner(interaction)): return
-        paged = await self._turn_page(1)
-        if paged:
-            await self._update_book(interaction)
-        else:
-            await interaction.response.defer()
+        await self.right_callback(interaction, button)
 
     @discord.ui.button(label="Last", style=discord.ButtonStyle.blurple)
     async def _last(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not (await self._is_owner(interaction)): return
-        l = self.book.page_count - 1
-        if self.page < l:
-            self.page = l
-            await self._update_book(interaction)
-        else:
-            await interaction.response.defer()
+        await self.last_callback(interaction, button)
 
     @discord.ui.button(label="Delete", style=discord.ButtonStyle.red)
     async def _delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not (await self._is_owner(interaction)): return
         await self._disable(interaction)
 
+    async def on_update(
+            self, interaction: discord.Interaction,
+            page: int
+    ) -> None:
+        pass
+
     async def on_timeout(self) -> None:
         await self._disable()
 
     async def _disable(self, inter=None):
-        self._first.disabled = True
-        self._right.disabled = True
-        self._left.disabled = True
-        self._last.disabled = True
-        self._delete.disabled = True
+        for btn in self.children:
+            btn.disabled = True
         if inter:
             await inter.response.edit_message(view=self)
         elif self.message:
