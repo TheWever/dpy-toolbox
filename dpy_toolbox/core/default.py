@@ -66,3 +66,14 @@ def get_multikey_dict_item(obj: dict, *args):
     if len(args) <= 1:
         return obj.__getitem__(args[0])
     return get_multikey_dict_item(obj[args[0]], *args[1:])
+
+
+def get_multiattr(o, *gets, default=MISSING):
+    obj = o
+    for get in gets:
+        obj = getattr(obj, get, default)
+        if isinstance(default, MISSING):
+            raise AttributeError(f"{obj} has no attribute {get}!")
+        if obj == default:
+            break
+    return obj
