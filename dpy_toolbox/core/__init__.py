@@ -11,5 +11,6 @@ from .default import (
     ensure_coroutine,
     await_any,
     set_multikey_dict_item,
-    get_multikey_dict_item
+    get_multikey_dict_item,
+    get_multiattr
 )
