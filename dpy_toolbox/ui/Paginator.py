@@ -1,4 +1,4 @@
-from typing import Union, Iterable, Optional, Callable, Coroutine
+from typing import Union, Iterable, Optional, Callable, Coroutine, Any
 import discord
 from itertools import chain
 from ..ui.core import ButtonDisplay, DropdownDisplay, SelectOptionDisplay
@@ -123,7 +123,7 @@ class Paginator(discord.ui.View):
         :rtype: discord.ui.View
         """
         self.book = book
-        self.page = 0
+        self._page = 0
         self.message = None
         self.show_page = show_page
         self.disable_unable = disable_unable
@@ -138,8 +138,8 @@ class Paginator(discord.ui.View):
         self.able_to_turn_style = able_to_turn_style or discord.ButtonStyle.green
         self.unable_to_turn = unable_to_turn or ButtonDisplay(label='...', color=discord.ButtonStyle.red)
 
-        self.left_callback = left_callback or self.default_callback_wrapper(lambda: self.page - 1)
-        self.right_callback = right_callback or self.default_callback_wrapper(lambda: self.page + 1)
+        self.left_callback = left_callback or self.default_callback_wrapper(lambda: self._page - 1)
+        self.right_callback = right_callback or self.default_callback_wrapper(lambda: self._page + 1)
 
         self.first_callback = first_callback or self.default_callback_wrapper(lambda: 0)
         self.last_callback = last_callback or self.default_callback_wrapper(lambda: self.book.page_count - 1)
@@ -163,7 +163,11 @@ class Paginator(discord.ui.View):
         for child in self.children:
             child.label, child.emoji, child.style = table[child.label].set_args(child.label, child.emoji, child.style)
 
-        self._update_buttons(self.page)
+        if self.show_page:
+            self._update_buttons(self._page)
+
+    async def get_message(self, message: Union[str, discord.Embed]):
+        return message
 
     async def _is_owner(self, inter):
         if self.users:
@@ -193,7 +197,7 @@ class Paginator(discord.ui.View):
 
     async def _turn_page(self, turn: Union[int]):
         if -1 < turn < self.book.page_count:
-            self.page = turn
+            self._page = turn
             return True
         return False
 
@@ -203,7 +207,7 @@ class Paginator(discord.ui.View):
                 return await inter.response.defer()
 
             final_page = turn()
-            if self.page == final_page:
+            if self._page == final_page:
                 return await inter.response.defer()
 
             turned_page = await self._turn_page(final_page)
@@ -218,17 +222,23 @@ class Paginator(discord.ui.View):
 
         return default_callback
 
+    @property
+    def page(self):
+        return self.book.pages[self._page]
+
     async def _update_book(self, interaction=None):
-        await self.on_update(interaction, self.page)
-        page = self.book.pages[self.page].content
+        await self.on_update(interaction, self._page)
+        page = self.book.pages[self._page].content
         table = {
             discord.Embed: "embed",
             str: "content"
         }
         if interaction:
-            await interaction.response.edit_message(**{table[type(page)]: page}, view=self)
+            await interaction.response.edit_message(**{table[type(page)]: await self.get_message(self, page)}, view=self)
+            if interaction.message:
+                self.message = interaction.message
         elif self.message:
-            await self.message.edit(**{table[type(page)]: page}, view=self)
+            await self.message.edit(**{table[type(page)]: await self.get_message(self, page)}, view=self)
 
     @discord.ui.button(label="First", style=discord.ButtonStyle.blurple)
     async def _first(self, interaction: discord.Interaction, button: discord.ui.Button):
