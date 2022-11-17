@@ -1,16 +1,23 @@
+# -*- coding: utf-8 -*-
+
+from typing import Optional
+
 import discord
 from discord.ext import commands
-from dpy_toolbox import Bot, UnvirtualSink, to_SinkVoiceChannel
+
+from dpy_toolbox import Bot, CustomContext, UnvirtualSink, to_SinkVoiceChannel
 
 bot = Bot(command_prefix='!', intents=discord.Intents.all())
 TOKEN = ''  # BAD
 
+
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     print('test')
 
+
 @bot.command()
-async def start(ctx: commands.Context):
+async def start(ctx: commands.Context) -> Optional[discord.Message]:
     """
     Record your voice!
     """
@@ -27,7 +34,7 @@ async def start(ctx: commands.Context):
     await ctx.reply("The recording has started!")
 
 
-async def finished_callback(sink, channel: discord.TextChannel, *args):
+async def finished_callback(sink, channel: discord.TextChannel) -> None:
     recorded_users = [
         f"<@{user_id}>"
         for user_id, audio in sink.audio_data.items()
@@ -38,7 +45,7 @@ async def finished_callback(sink, channel: discord.TextChannel, *args):
 
 
 @bot.command()
-async def stop(ctx):
+async def stop(ctx: CustomContext[Bot]) -> None:
     """
     Stop recording.
     """

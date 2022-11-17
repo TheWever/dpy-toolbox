@@ -1,13 +1,17 @@
+# -*- coding: utf-8 -*-
+
+import discord
+
 from dpy_toolbox import Bot
 from dpy_toolbox.ui import QuestioningModal
-import discord
 
 TOKEN = ''  # BAD
 
 bot = Bot(command_prefix='!', intents=discord.Intents.all(), toolbox=True)
 
+
 @bot.tree.command()
-async def apply(inter: discord.Interaction):
+async def apply(inter: discord.Interaction) -> None:
     async def callback(self: QuestioningModal, inter: discord.Interaction):
         await inter.response.send_message("Application sent!", ephemeral=True)
         embed = discord.Embed(
@@ -31,8 +35,9 @@ async def apply(inter: discord.Interaction):
     )
     await inter.response.send_modal(modal)
 
+
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     print(f'Running as {bot.user}')
 
 bot.run(TOKEN)

@@ -1,10 +1,15 @@
-from discord import app_commands
-from dpy_toolbox import Bot, translating
-import discord
+# -*- coding: utf-8 -*-
+
 import asyncio
+
+import discord
+from discord import app_commands
+
+from dpy_toolbox import Bot, translating
 
 bot = Bot(command_prefix='!', intents=discord.Intents.all(), auto_sync=True)
 TOKEN = ''  # BAD
+
 
 # put these above the bot.tree.command()
 @translating.default_language("en")                             # set a default language if there is no translation
@@ -13,7 +18,7 @@ TOKEN = ''  # BAD
 @translating.translate_command_description("en", "say hello")   # if lang en (english) command description = say hello
 @translating.translate_command_description("de", "sage hallo")  # if lang de command description ) = sage hallo
 @bot.tree.command()
-async def hey(inter: discord.Interaction):
+async def hey(inter: discord.Interaction) -> None:
     await inter.response.send_message(f"Hello {inter.user.mention}!")
 
 
@@ -24,6 +29,8 @@ in this example no default lang is set therefore the
         the command's description the by discord.py provided default ("...") will be used
         a command's param the description defined using the describe decorator will be used
 """
+
+
 @translating.translate_polyglot(de="addieren", en="add")                                     # k = lang; v = command name /
 @translating.translate_params_name("en", number1="first_number")                             # if lang enlish name of param number1 = "first_number" and param number2 default (here "the second name") will be used
 @translating.translate_params_name("de", number1="erste_nummer", number2="zweite_nummer")    # if lang de name of param number1 = "first_number" and param number3 = "second_number"
@@ -31,11 +38,12 @@ in this example no default lang is set therefore the
 @translating.translate_command_description("de", "addiere zwei nummern")                     # if lang de description of command = "addiere zwei nummern" else d.py default "..." will be used
 @bot.tree.command()
 @app_commands.describe(number1="the first number", number2="the second number")
-async def add(inter: discord.Interaction, number1: int, number2: int):
+async def add(inter: discord.Interaction, number1: int, number2: int) -> None:
     await inter.response.send_message(f"The solution is: `{number1 + number2}`!")
 
+
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     print(f'Running as {bot.user}')
 
 if __name__ == '__main__':

@@ -1,19 +1,22 @@
-from dpy_toolbox import helping, Bot
-from discord import app_commands
+# -*- coding: utf-8 -*-
+
 import discord
+from discord import app_commands
+from discord.ext import commands
+
+from dpy_toolbox import Bot, helping
 
 TOKEN = ''  # BAD
 
 bot = Bot(
     command_prefix='!',
     intents=discord.Intents.all(),
-    help_command=helping.AutoHelpPaginator(
+    help_command=helping.AutoHelp(
         title='Help menu:',                          # title of menu
         description="Just a simple help menu...",    # description of menu
         register_help_slash=True,                    # will register /help
         param_desc_prefix="=> ",                     # will be added in front of every description
-        ephemeral=True,
-        max_items=1
+        ephemeral=True
     ),
     toolbox=True
 )
@@ -43,12 +46,12 @@ second addend [any] [required]      - param 2 + type + is required ?
     number_2="second addend"             # new name of param named number_1
 )
 @helping.describe(
-    number_1="Just a number",            # description of param named number_1
-    number_2="Just another number"       # description of param named number_1
+    number_1="Just a number",         # description of param named number_1
+    number_2="Just another number"    # description of param named number_1
 )
 @bot.command()
-async def add(inter: discord.Interaction, number_1: int, number_2: int):
-    await inter.channel.send(f"sum: {number_1 + number_2}")
+async def add(ctx: commands.Context, number_1: int, number_2: int) -> None:
+    await ctx.send(f"sum: {number_1 + number_2}")
 
 
 @bot.tree.command(
@@ -62,6 +65,7 @@ async def add(inter: discord.Interaction, number_1: int, number_2: int):
     number_1="Just a number",                             # description of param named number_1
     number_2="Just another number"                        # description of param named number_1
 )
-async def subtract(ctx, number_1: int, number_2: int):
-    await ctx.channel.send(f"sub: {number_1 - number_2}")
+async def subtract(inter: discord.Interaction, number_1: int, number_2: int) -> None:
+    await inter.response.send_message(f"sub: {number_1 - number_2}")
+
 bot.run(TOKEN)
