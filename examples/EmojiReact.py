@@ -11,9 +11,9 @@ async def on_ready():
 
 # callback get called on add/remove of emoji
 async def emoji_callback(payload: discord.RawReactionActionEvent):
-    channel: discord.TextChannel = bot.get_channel_from_cache(payload.channel_id)
+    channel: discord.TextChannel = await bot.fetch_channel(payload.channel_id)
     message: discord.Message = await channel.fetch_message(payload.message_id)
-    user: discord.User = await bot.fetch_user(payload.user_id)
+    user: discord.User = await bot.fetch_user_from_cache(payload.user_id)
     await message.reply(f'{user.mention} you {"reacted with" if payload.event_type == "REACTION_ADD" else "removed your reaction"} {payload.emoji.name}')
 
 @bot.command()
@@ -32,5 +32,4 @@ async def emoji_react(ctx, *, message=None):
     await asyncio.sleep(10)
     await s.abort()
 
-if __name__ == '__main__':
-    bot.run(TOKEN)
+bot.run(TOKEN)
