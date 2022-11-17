@@ -2,7 +2,7 @@ from discord.ext import commands
 from dpy_toolbox import Bot
 import discord
 
-TOKEN = 'ODgwOTQwODYzNTM3MTU2MTA3.G6LBiS.y768CjBo9KYoQi7pzS3-nHj0LNbl9OI51r_oaQ'  # BAD
+TOKEN = ''  # BAD
 LOG_CHANNEL_ID = "880934899622740072"
 OWNER_ID = "784735765514158090"
 PREFIX = '!'
