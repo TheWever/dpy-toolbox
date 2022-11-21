@@ -204,7 +204,7 @@ class Paginator(discord.ui.View):
     def default_callback_wrapper(self, turn: Callable):
         async def default_callback(inter: discord.Interaction, button: discord.ui.Button):
             if not (await self._is_owner(inter)):
-                return await inter.response.defer()
+                return
 
             final_page = turn()
             if self._page == final_page:
@@ -234,11 +234,11 @@ class Paginator(discord.ui.View):
             str: "content"
         }
         if interaction:
-            await interaction.response.edit_message(**{table[type(page)]: await self.get_message(self, page)}, view=self)
+            await interaction.response.edit_message(**{table[type(page)]: await self.get_message(page)}, view=self)
             if interaction.message:
                 self.message = interaction.message
         elif self.message:
-            await self.message.edit(**{table[type(page)]: await self.get_message(self, page)}, view=self)
+            await self.message.edit(**{table[type(page)]: await self.get_message(page)}, view=self)
 
     @discord.ui.button(label="First", style=discord.ButtonStyle.blurple)
     async def _first(self, interaction: discord.Interaction, button: discord.ui.Button):
