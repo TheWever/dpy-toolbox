@@ -37,7 +37,9 @@ class DictonaryTranslator(app_commands.Translator):
         trans_to_lang = locale[1]
         translator = None
         command_name = context.data.name if isinstance(context.data, (app_commands.Command)) else context.data.command.name
-        cmd_tab = self.translator[command_name]
+        cmd_tab = self.translator.get(command_name, None)
+        if not cmd_tab:
+            return s
         for lang, trans in cmd_tab.items():
             if trans_to_lang.startswith(lang):
                 translator = trans
