@@ -166,7 +166,7 @@ class Paginator(discord.ui.View):
         if self.show_page:
             self._update_buttons(self._page)
 
-    async def get_message(self, message: Union[str, discord.Embed]):
+    async def get_message(self, _, message: Union[str, discord.Embed]):
         return message
 
     async def _is_owner(self, inter):
@@ -234,11 +234,11 @@ class Paginator(discord.ui.View):
             str: "content"
         }
         if interaction:
-            await interaction.response.edit_message(**{table[type(page)]: await self.get_message(page)}, view=self)
+            await interaction.response.edit_message(**{table[type(page)]: await self.get_message(self, page)}, view=self)
             if interaction.message:
                 self.message = interaction.message
         elif self.message:
-            await self.message.edit(**{table[type(page)]: await self.get_message(page)}, view=self)
+            await self.message.edit(**{table[type(page)]: await self.get_message(self, page)}, view=self)
 
     @discord.ui.button(label="First", style=discord.ButtonStyle.blurple)
     async def _first(self, interaction: discord.Interaction, button: discord.ui.Button):
